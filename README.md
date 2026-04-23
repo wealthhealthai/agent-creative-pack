@@ -1,6 +1,9 @@
-# agent-creative-pack
+# Forge Imagine
 
-Reusable Python module that turns any AI agent into a marketing creative expert. Generates production-quality digital ad creative from a plain-language brief.
+**Internal codename:** Forge Imagine
+**Package:** `agent-creative-pack`
+
+Reusable Python capability pack that turns any AI agent into a marketing creative expert. Generates production-quality digital ad creative from a plain-language brief.
 
 Built by WealthHealth AI — Forge Enterprise Division.
 
