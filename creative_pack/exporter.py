@@ -1,140 +1,86 @@
 """
-Stage 5 — Platform Export
-==========================
-Resizes/crops the composited master image to each platform's exact dimensions.
-Uses PIL for final resize (NOT for compositing — just geometry).
+Stage 5 — Platform export: resize/crop to platform specs and save in correct format.
+PIL is appropriate here — this is just resize, not creative compositing.
 """
-
-from __future__ import annotations
-
-import sys
-
-import os
-import uuid
 from pathlib import Path
-
-from creative_pack.config import get_platform_spec, PLATFORM_SPECS
-
-
-def _resize_image(
-    source_path: str,
-    output_path: str,
-    width: int,
-    height: int,
-    fmt: str,
-) -> str:
-    """
-    Resize and crop an image to the target dimensions using PIL.
-
-    Strategy: scale to fill (cover), then center-crop.
-    This preserves aspect ratio while filling the target canvas.
-    """
-    try:
-        from PIL import Image
-
-        img = Image.open(source_path).convert("RGB")
-        src_w, src_h = img.size
-
-        # Scale to fill — determine scale factor
-        scale_w = width / src_w
-        scale_h = height / src_h
-        scale = max(scale_w, scale_h)
-
-        new_w = int(src_w * scale)
-        new_h = int(src_h * scale)
-        img = img.resize((new_w, new_h), Image.LANCZOS)
-
-        # Center crop
-        left = (new_w - width) // 2
-        top = (new_h - height) // 2
-        img = img.crop((left, top, left + width, top + height))
-
-        # Save
-        pil_format = "JPEG" if fmt.lower() in ("jpg", "jpeg") else "PNG"
-        save_kwargs: dict = {}
-        if pil_format == "JPEG":
-            save_kwargs["quality"] = 92
-            save_kwargs["optimize"] = True
-        img.save(output_path, pil_format, **save_kwargs)
-        return output_path
-
-    except Exception as e:
-        print(f"[exporter] PIL resize failed: {e} — copying source", file=sys.stderr)
-        import shutil
-        shutil.copy2(source_path, output_path)
-        return output_path
+from .config import get_platform_spec, PLATFORM_SPECS
 
 
 def export_to_platforms(
     source_image: str,
     platforms: list[str],
     output_dir: str,
+    suffix: str = "",
 ) -> dict[str, str]:
     """
-    Export a composited master image to all requested platform dimensions.
-
-    Args:
-        source_image:  Local path to the composited PNG from Stage 4.
-        platforms:     List of platform keys (e.g. ["meta_static", "meta_story_img"]).
-        output_dir:    Directory to write resized output files.
-
-    Returns:
-        Dict mapping platform → local file path.
+    Resize and export a source image to all requested platform dimensions.
+    Returns dict of platform → output file path.
     """
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    results: dict[str, str] = {}
+    try:
+        from PIL import Image
+    except ImportError:
+        raise RuntimeError("Pillow not installed. Run: pip install Pillow")
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    results = {}
+
+    src = Image.open(source_image)
+    if src.mode not in ("RGB", "RGBA"):
+        src = src.convert("RGB")
 
     for platform in platforms:
-        try:
-            spec = get_platform_spec(platform)
-        except KeyError:
-            print(f"[exporter] Unknown platform '{platform}' — skipping", file=sys.stderr)
-            continue
+        spec = get_platform_spec(platform)
+        w, h = spec["w"], spec["h"]
+        fmt = spec.get("fmt", "png")
 
-        width = spec["w"]
-        height = spec["h"]
-        fmt = spec["fmt"]
-
-        # Skip video platforms (Phase 3)
         if fmt == "mp4":
-            print(f"[exporter] Platform '{platform}' is video (Phase 3, file=sys.stderr) — skipping")
+            # Skip video platforms in static export
+            print(f"[exporter] Skipping video platform: {platform}")
             continue
 
-        ext = fmt.lower()
-        fname = f"{platform}_{uuid.uuid4().hex[:6]}.{ext}"
-        output_path = os.path.join(output_dir, fname)
+        # Smart crop/resize: scale to fill, then center crop
+        img = src.copy()
+        src_ratio = img.width / img.height
+        tgt_ratio = w / h
 
-        result = _resize_image(source_image, output_path, width, height, fmt)
-        results[platform] = result
+        if src_ratio > tgt_ratio:
+            # Source is wider — scale by height
+            new_h = h
+            new_w = int(img.width * h / img.height)
+        else:
+            # Source is taller — scale by width
+            new_w = w
+            new_h = int(img.height * w / img.width)
+
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+
+        # Center crop
+        left = (new_w - w) // 2
+        top = (new_h - h) // 2
+        img = img.crop((left, top, left + w, top + h))
+
+        # Save
+        sfx = f"_{suffix}" if suffix else ""
+        ext = "jpg" if fmt == "jpg" else "png"
+        filename = f"{platform}{sfx}_export.{ext}"
+        out_path = output_dir / filename
+
+        if ext == "jpg":
+            img.convert("RGB").save(str(out_path), "JPEG", quality=92)
+        else:
+            img.save(str(out_path), "PNG")
+
+        results[platform] = str(out_path)
+        print(f"[exporter] {platform} → {out_path} ({w}×{h})")
 
     return results
 
 
 def calculate_cost(platforms: list[str], has_fal_key: bool) -> float:
-    """
-    Estimate API cost for generating a set of platform exports.
-
-    Phase 1 static costs:
-      - Flux 1.1 Pro: $0.04/image
-      - BiRefNet: free
-      - Playwright rendering: $0.00 (local)
-      - Platform export: $0.00 (PIL)
-    
-    When mocked (no FAL key): $0.00
-    When live: $0.04 per generated image (charged at generation stage)
-    """
+    """Estimate API cost for a run."""
     if not has_fal_key:
         return 0.0
-
-    # Static platforms only (video not included in Phase 1)
-    static_count = sum(
-        1
-        for p in platforms
-        if PLATFORM_SPECS.get(p, {}).get("fmt", "png") != "mp4"
-    )
-
-    # Flux charge is per generation run (not per export).
-    # This function returns the export-stage cost only.
-    # Generation cost is added by the caller in __init__.py.
-    # Here we just note screenshotone might be used.
-    return 0.0
+    static_platforms = [p for p in platforms if PLATFORM_SPECS.get(p, {}).get("fmt") != "mp4"]
+    # Flux: ~$0.04/image, BiRefNet: ~$0.01
+    return round(len(static_platforms) * 0.04 + 0.01, 4)

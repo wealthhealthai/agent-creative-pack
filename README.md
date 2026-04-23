@@ -1,204 +1,157 @@
-# Creative Capability Pack
+# agent-creative-pack
 
-**Phase 1 — Static Ad Generation**
+Reusable Python module that turns any AI agent into a marketing creative expert. Generates production-quality digital ad creative from a plain-language brief.
 
-Generates production-quality digital ad creative from a one-line brief.
-Designed for the AXIA Marketing Agent (Helio Genomics).
+Built by WealthHealth AI — Forge Enterprise Division.
 
 ---
 
-## Quick Start
+## Pipeline
 
-### 1. Install dependencies
-
-```bash
-# Core deps (no API keys needed for mock mode)
-pip3 install pillow playwright requests colorthief python-dotenv
-
-# Install Playwright Chromium browser
-python3 -m playwright install chromium
-
-# Full install (when you have API keys)
-pip3 install -r requirements.txt
+```
+[BRIEF/URL] → [0. SCRAPE] → [1. EXPAND] → [2. ASSETS] → [3. GENERATE] → [4. COMPOSITE] → [5. EXPORT]
 ```
 
-### 2. Set environment variables (optional — all fall back to mock mode)
+- **Stage 0** — Optional: scrape product URL for context
+- **Stage 1** — LLM expands brief into 3 copy variants (PAS / AIDA / emotional)
+- **Stage 2** — BiRefNet removes product image background
+- **Stage 3** — Flux 1.1 Pro generates lifestyle/hero background image
+- **Stage 4** — HTML/CSS templates → Playwright screenshot at exact platform dims
+- **Stage 5** — Resize/export to all requested platform formats
+
+Runs fully in **mock mode** (no API keys) for development and testing.
+
+---
+
+## Installation
 
 ```bash
-export FAL_API_KEY="your_fal_key"          # fal.ai — Flux + BiRefNet
-export ANTHROPIC_API_KEY="your_key"         # Claude — brief expansion
-export SCREENSHOTONE_API_KEY="your_key"     # screenshotone.com — URL scraper fallback
+pip install -r requirements.txt
+playwright install chromium
 ```
 
-Without API keys: Playwright compositor runs locally, placeholder PNG images are generated, and mock copy is used. Full pipeline still runs end-to-end.
-
-### 3. Run the CLI
+## Environment Variables
 
 ```bash
-# Single platform, mock mode
-python3 creative_pack/cli.py \
-  --client helio_livertrace \
-  --brief "LiverTrace DTC, warm hopeful, adults 40+" \
-  --platforms meta_static \
-  --output /tmp/creative-out/
+# Required for live generation (optional for mock mode)
+export ANTHROPIC_API_KEY=sk-ant-...   # Brief expansion via Claude
+export FAL_API_KEY=...                # Flux image generation + BiRefNet
+export SCREENSHOTONE_API_KEY=...      # URL scraper fallback
+```
 
-# Full 9-ad set (3 platforms × 3 copy variants)
+---
+
+## CLI Usage
+
+```bash
+# Full ad set — 3 platforms, 3 copy variants
 python3 creative_pack/cli.py \
   --client helio_livertrace \
   --brief "LiverTrace DTC, warm hopeful, adults 40+" \
   --platforms meta_static meta_story_img google_display \
-  --variants 3 \
-  --output /tmp/creative-out/
+  --output /tmp/helio-ads/
 
-# With URL scraping (Phase 0)
+# Single static ad
 python3 creative_pack/cli.py \
   --client helio_livertrace \
-  --brief "DTC ad for liver health" \
-  --product-url https://livertrace.com \
+  --brief "Know your liver risk" \
   --platforms meta_static \
-  --output /tmp/creative-out/
+  --variants 1
+
+# With product image URL
+python3 creative_pack/cli.py \
+  --client helio_livertrace \
+  --brief "Home liver test kit" \
+  --platforms meta_static \
+  --product-image https://livertrace.com/images/kit.jpg
+
+# Physician-facing (product_hero template)
+python3 creative_pack/cli.py \
+  --client helio_helioliver \
+  --brief "HelioLiver LDT oncologist targeting" \
+  --platforms google_display linkedin_static \
+  --template product_hero
 ```
 
-**Output JSON:**
+Output is JSON to stdout:
 ```json
 {
   "status": "ok",
+  "job_id": "a3f2b1c4",
   "files": {
-    "meta_static_v1": "/tmp/creative-out/exports/v1/meta_static_abc123.png",
-    "meta_static_v2": "/tmp/creative-out/exports/v2/meta_static_def456.png"
+    "meta_static_v1_PAS": "/tmp/helio-ads/meta_static_pas_0.png",
+    "meta_static_v2_AIDA": "/tmp/helio-ads/meta_static_aida_1.png"
   },
-  "cost": 0.0,
-  "job_id": "a1b2c3d4",
-  "timestamp": "2026-04-23T07:00:00+00:00",
-  "copy_variants": [...]
+  "copy_variants": [...],
+  "cost": 0.12
 }
 ```
 
-### 4. Run tests
+---
 
-```bash
-cd /path/to/agent-creative-pack
-python3 -m pytest tests/ -v
+## Python API
+
+```python
+from creative_pack import generate_ad_set, generate_static, generate_variants
+
+# Full ad set
+result = generate_ad_set(
+    brief="LiverTrace DTC, warm hopeful",
+    client_id="helio_livertrace",
+    platforms=["meta_static", "meta_story_img", "google_display"],
+)
+print(result.files)  # {platform_variant: file_path}
+
+# Single quick static
+path = generate_static("test ad", "helio_livertrace", "meta_static")
+
+# A/B variants
+paths = generate_variants("test ad", "helio_livertrace", "meta_static", count=3)
 ```
 
 ---
 
-## Pipeline Architecture
+## Adding a New Client
 
-```
-[BRIEF] → [0. SCRAPE] → [1. EXPAND] → [2. ASSETS] → [3. GENERATE] → [4. COMPOSITE] → [5. EXPORT]
-           (optional)     Claude        BiRefNet        Flux 1.1 Pro    HTML/CSS→         PIL resize
-           Playwright               (bg removal)       (images)         Playwright        per platform
-```
-
-| Stage | Module | Mock Behavior |
-|-------|--------|---------------|
-| 0 | `scraper.py` | Returns minimal ProductAsset |
-| 1 | `expander.py` | Returns placeholder PAS/AIDA/emotional copy |
-| 2 | `assets.py` | Downloads image as-is (no bg removal) |
-| 3 | `generator.py` | Generates solid-color placeholder PNG |
-| 4 | `compositor.py` | Renders HTML template via Playwright (full) |
-| 5 | `exporter.py` | Resizes PNG to platform dimensions via PIL |
-
----
-
-## Platform Specs
-
-| Platform Key | Dimensions | Format |
-|---|---|---|
-| `meta_static` | 1080×1080 | PNG |
-| `meta_story_img` | 1080×1920 | PNG |
-| `google_display` | 1200×628 | PNG |
-| `linkedin_static` | 1200×627 | PNG |
-| `hero_desktop` | 1920×1080 | JPG |
-| `hero_mobile` | 390×844 | JPG |
-| `hero_og` | 1200×630 | JPG |
-| `meta_feed` (video) | 1080×1080 | MP4 (Phase 3) |
-| `meta_story` (video) | 1080×1920 | MP4 (Phase 3) |
-
----
-
-## Adding a New Client Brand Kit
-
-1. Create `brand_kits/your_client.json`:
-
-```json
-{
-  "client_id": "your_client",
-  "product_name": "Your Product",
-  "logo_url": "https://yoursite.com/logo.png",
-  "logo_position": "top-right",
-  "primary_color": "#000000",
-  "accent_color": "#FF6600",
-  "background_color": "#FFFFFF",
-  "font_headline": "Inter",
-  "font_headline_weight": "700",
-  "font_body": "Inter",
-  "font_body_weight": "400",
-  "cta_style": "rounded-pill",
-  "cta_color": "#FF6600",
-  "disclaimer_required": false,
-  "disclaimer_text": "",
-  "style_default": "clean",
-  "image_style": "lifestyle-emotional",
-  "fda_guardrails": false,
-  "guardrail_terms_blocked": [],
-  "guardrail_terms_required": [],
-  "music_default": null
-}
-```
-
-2. Run the CLI with `--client your_client`. Done.
-
----
+1. Create `brand_kits/<client_id>.json` (copy helio_livertrace.json as template)
+2. Create 3 HTML templates in `templates/` or reuse existing ones
+3. Done — full pipeline works immediately
 
 ## Adding a New Platform
 
-Edit `creative_pack/config.py` and add an entry to `PLATFORM_SPECS`:
-
+Add one entry to `PLATFORM_SPECS` in `creative_pack/config.py`:
 ```python
-PLATFORM_SPECS["pinterest_pin"] = {
-    "w": 1000, "h": 1500, "ratio": "2:3", "fmt": "png"
-}
+"snapchat_story": {"w": 1080, "h": 1920, "ratio": "9:16", "fmt": "png"},
 ```
-
-And add copy limits to `PLATFORM_COPY_LIMITS`:
-
-```python
-PLATFORM_COPY_LIMITS["pinterest_pin"] = {"headline": 100, "body": 500}
-```
-
-The export stage will automatically handle the new platform.
 
 ---
 
-## Templates
+## Supported Platforms
 
-HTML/CSS ad templates in `templates/`:
-
-| Template | Layout | Best For |
-|---|---|---|
-| `lifestyle.html` | Full-bleed bg image, copy bottom-left | DTC consumer (LiverTrace) |
-| `product_hero.html` | Split: image left, copy right | Physician-facing (HelioLiver) |
-| `minimal.html` | Centered, lots of whitespace | Brand awareness, retargeting |
-
-Templates use CSS variables (`--primary-color`, `--accent-color`, etc.) and
-data attributes (`data-headline`, `data-body`, etc.) that the compositor injects.
-No Python changes needed to update visual design — just edit the HTML/CSS.
+| Platform | Dimensions | Format |
+|----------|-----------|--------|
+| meta_static | 1080×1080 | PNG |
+| meta_story_img | 1080×1920 | PNG |
+| google_display | 1200×628 | PNG |
+| linkedin_static | 1200×627 | PNG |
+| hero_desktop | 1920×1080 | JPG |
+| hero_mobile | 390×844 | JPG |
 
 ---
 
-## Brand Kits
+## Running Tests
 
-| Kit | Client | Use |
-|---|---|---|
-| `helio_livertrace.json` | Helio Genomics / LiverTrace | DTC consumer, warm/hopeful, FDA guardrails ON |
-| `helio_helioliver.json` | Helio Genomics / HelioLiver | Physician-facing, clinical, stricter guardrails |
+```bash
+pytest tests/ -v
+```
+
+Tests run fully in mock mode — no API keys required.
 
 ---
 
 ## Phase Roadmap
 
-- **Phase 1** (current) — Static ads: Meta, Google Display, LinkedIn
-- **Phase 2** — Website hero assets: URL scraping + vision model brief
-- **Phase 3** — Video ads: Kling 3.0 + MoviePy + music bed
+- **Phase 1** ✅ Static image ads (current)
+- **Phase 2** — Website hero assets (URL → vision → Flux → hero image)
+- **Phase 3** — Video ads (Kling 3.0 + MoviePy)
+- **Phase 4** — UGC/voiceover (ElevenLabs + lipsync)

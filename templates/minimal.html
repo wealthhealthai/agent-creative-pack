@@ -1,260 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <!-- __GOOGLE_FONTS__ -->
   <title>Ad Creative — Minimal</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    /* :root-vars */
-    :root {
-      --primary-color: #1A3F6F;
-      --accent-color: #00B4D8;
-      --cta-color: #00B4D8;
-      --background-color: #ffffff;
-      --font-headline: 'Inter', sans-serif;
-      --font-body: 'Inter', sans-serif;
-      --font-headline-weight: 700;
-      --font-body-weight: 400;
-      --bg-image: none;
-      --logo-url: none;
-    }
+    :root { /* __CSS_VARS__ */ }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: var(--background-color); }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      font-family: var(--font-body);
-      background-color: var(--background-color);
-    }
-
-    /* ── Main ad container ─────────────────────────────────── */
     .ad-container {
+      width: 100vw; height: 100vh;
       position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      font-family: var(--font-body);
+      background: var(--background-color);
     }
 
-    /* ── Background image (subtle, if provided) ─────────────── */
-    .ad-background {
-      position: absolute;
-      inset: 0;
+    /* Subtle background image at low opacity */
+    .ad-bg {
+      position: absolute; inset: 0;
       background-image: var(--bg-image);
       background-size: cover;
       background-position: center;
-      background-repeat: no-repeat;
       opacity: 0.12;
     }
 
-    /* ── Top accent bar ─────────────────────────────────────── */
-    .ad-top-bar {
+    /* Accent circle decoration */
+    .ad-circle {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 5px;
-      background: linear-gradient(
-        to right,
-        var(--primary-color),
-        var(--accent-color)
-      );
+      width: 70vw; height: 70vw;
+      max-width: 70vh; max-height: 70vh;
+      border-radius: 50%;
+      background: var(--accent-color);
+      opacity: 0.06;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
     }
 
-    /* ── Logo ──────────────────────────────────────────────── */
-    .ad-logo-area {
-      position: absolute;
-      top: 5%;
-      right: 5%;
-      z-index: 10;
+    .ad-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 10%;
+      max-width: 90%;
     }
 
     .ad-logo {
-      width: 100px;
-      height: auto;
+      max-height: 40px;
+      max-width: 120px;
+      object-fit: contain;
+      margin-bottom: 8%;
+      display: none;
     }
 
-    .ad-logo-fallback {
-      font-family: var(--font-headline);
-      font-weight: 700;
-      font-size: clamp(12px, 1.5vw, 18px);
-      color: var(--primary-color);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* ── Center content block ───────────────────────────────── */
-    .ad-center {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 8%;
-      max-width: 90%;
-      gap: clamp(16px, 2.5vh, 32px);
-    }
-
-    /* ── Headline ───────────────────────────────────────────── */
     .ad-headline {
       font-family: var(--font-headline);
       font-weight: var(--font-headline-weight);
-      font-size: clamp(24px, 5vw, 58px);
-      line-height: 1.12;
+      font-size: clamp(24px, 5vw, 60px);
+      line-height: 1.1;
+      letter-spacing: -0.025em;
       color: var(--primary-color);
-      letter-spacing: -0.02em;
+      margin-bottom: 5%;
     }
 
-    /* ── Decorative divider ─────────────────────────────────── */
-    .ad-divider {
-      width: 48px;
-      height: 3px;
-      background-color: var(--accent-color);
+    .ad-body {
+      font-size: clamp(12px, 2vw, 24px);
+      line-height: 1.55;
+      color: #444;
+      margin-bottom: 8%;
+    }
+
+    .ad-cta {
+      display: inline-block;
+      background: var(--cta-color);
+      color: #fff;
+      font-family: var(--font-headline);
+      font-weight: 700;
+      font-size: clamp(12px, 1.8vw, 20px);
+      padding: 3.5% 9%;
+      border-radius: 9999px;
+      cursor: default;
+    }
+
+    .ad-accent-line {
+      width: 50px; height: 4px;
+      background: var(--accent-color);
+      margin: 0 auto 6%;
       border-radius: 2px;
     }
 
-    /* ── Body copy ──────────────────────────────────────────── */
-    .ad-body {
-      font-family: var(--font-body);
-      font-weight: 300;
-      font-size: clamp(13px, 1.9vw, 20px);
-      line-height: 1.65;
-      color: rgba(0, 0, 0, 0.6);
-      max-width: 80%;
-    }
-
-    /* ── CTA button ─────────────────────────────────────────── */
-    .ad-cta {
-      display: inline-block;
-      background-color: transparent;
-      color: var(--cta-color);
-      font-family: var(--font-headline);
-      font-weight: 600;
-      font-size: clamp(13px, 1.7vw, 17px);
-      letter-spacing: 0.04em;
-      padding: 0.75em 2em;
-      border: 2px solid var(--cta-color);
-      border-radius: 9999px;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    /* ── Disclaimer ─────────────────────────────────────────── */
     .ad-disclaimer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 0.5em 6%;
-      font-family: var(--font-body);
-      font-weight: 400;
-      font-size: clamp(8px, 0.9vw, 10px);
-      line-height: 1.4;
-      color: rgba(0, 0, 0, 0.35);
-      text-align: center;
-      border-top: 1px solid rgba(0,0,0,0.06);
-      background: rgba(255,255,255,0.9);
-      z-index: 20;
+      position: absolute; bottom: 3%; left: 5%; right: 5%;
+      font-size: clamp(8px, 1vw, 11px);
+      color: #999; text-align: center; display: none;
     }
   </style>
 </head>
 <body>
   <div class="ad-container"
-       data-headline=""
-       data-body=""
-       data-cta="Learn More"
-       data-disclaimer="">
-
-    <!-- Top accent bar -->
-    <div class="ad-top-bar"></div>
-
-    <!-- Subtle background image -->
-    <div class="ad-background"></div>
-
-    <!-- Logo top-right -->
-    <div class="ad-logo-area">
-      <div class="ad-logo-fallback" id="ad-logo-area"></div>
+       data-headline="" data-body="" data-cta=""
+       data-disclaimer="" data-show-disclaimer="false" data-logo-url="">
+    <div class="ad-bg"></div>
+    <div class="ad-circle"></div>
+    <div class="ad-inner">
+      <img class="ad-logo" id="logo" src="" alt="logo">
+      <div class="ad-headline" id="headline"></div>
+      <div class="ad-accent-line"></div>
+      <div class="ad-body" id="body"></div>
+      <div class="ad-cta" id="cta"></div>
     </div>
-
-    <!-- Centered content -->
-    <div class="ad-center">
-      <h1 class="ad-headline" id="ad-headline"></h1>
-      <div class="ad-divider" id="ad-divider"></div>
-      <p class="ad-body" id="ad-body"></p>
-      <span class="ad-cta" id="ad-cta"></span>
-    </div>
-
-    <!-- Disclaimer -->
-    <div class="ad-disclaimer" id="ad-disclaimer" style="display:none;"></div>
-
+    <div class="ad-disclaimer" id="disclaimer"></div>
   </div>
-
   <script>
-    (function () {
-      var container = document.querySelector('.ad-container');
-      if (!container) return;
-
-      var headline  = container.getAttribute('data-headline')   || '';
-      var body      = container.getAttribute('data-body')       || '';
-      var cta       = container.getAttribute('data-cta')        || 'Learn More';
-      var disc      = container.getAttribute('data-disclaimer') || '';
-
-      var h = document.getElementById('ad-headline');
-      if (h) h.textContent = headline;
-
-      var b = document.getElementById('ad-body');
-      if (b) {
-        if (body) { b.textContent = body; b.style.display = ''; }
-        else { b.style.display = 'none'; }
-      }
-
-      var c = document.getElementById('ad-cta');
-      if (c) c.textContent = cta;
-
-      var d = document.getElementById('ad-disclaimer');
-      if (d) {
-        if (disc) { d.textContent = disc; d.style.display = ''; }
-        else { d.style.display = 'none'; }
-      }
-
-      // Hide divider if no body copy
-      var div = document.getElementById('ad-divider');
-      if (div && !body) div.style.display = 'none';
-
-      // Logo
-      var logoArea = document.getElementById('ad-logo-area');
-      if (logoArea) {
-        var style = getComputedStyle(document.documentElement);
-        var logoUrl = style.getPropertyValue('--logo-url').trim();
-        var match = logoUrl.match(/url\(['"]?([^'"]+)['"]?\)/);
-        if (match && match[1] && match[1] !== 'none') {
-          var img = document.createElement('img');
-          img.src = match[1];
-          img.alt = '';
-          img.className = 'ad-logo';
-          img.onerror = function() { this.style.display = 'none'; };
-          logoArea.parentNode.insertBefore(img, logoArea);
-          logoArea.style.display = 'none';
-        }
-      }
-    })();
+    const c = document.querySelector('.ad-container');
+    document.getElementById('headline').textContent = c.dataset.headline || '';
+    document.getElementById('body').textContent = c.dataset.body || '';
+    document.getElementById('cta').textContent = c.dataset.cta || '';
+    const disc = c.dataset.disclaimer || '';
+    if (disc && c.dataset.showDisclaimer === 'true') {
+      const el = document.getElementById('disclaimer'); el.textContent = disc; el.style.display = 'block';
+    }
+    if (!document.getElementById('body').textContent.trim()) {
+      document.getElementById('body').style.display = 'none';
+    }
+    const logoUrl = c.dataset.logoUrl || '';
+    if (logoUrl) { const l = document.getElementById('logo'); l.src = logoUrl; l.style.display = 'block'; }
   </script>
 </body>
 </html>

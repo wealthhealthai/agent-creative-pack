@@ -6,3 +6,4 @@ colorthief>=0.2.1
 requests>=2.31.0
 moviepy>=1.0.3
 python-dotenv>=1.0.0
+pytest>=7.0.0

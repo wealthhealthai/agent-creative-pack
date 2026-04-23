@@ -1,234 +1,77 @@
-"""
-test_expander.py
-================
-Tests the brief expander in mock mode (no ANTHROPIC_API_KEY required).
-Verifies structure, variant count, and character limit enforcement.
-"""
-
-import os
-import sys
-
+"""Tests for brief expander — runs without any API keys."""
 import pytest
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from creative_pack.models import BrandKit, CopySet, CreativeBrief
-from creative_pack.expander import expand_brief, _enforce_char_limits, _mock_brief
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-def make_brand_kit(fda: bool = True, image_style: str = "lifestyle-emotional") -> BrandKit:
-    return BrandKit(
-        client_id="helio_livertrace",
-        product_name="LiverTrace",
-        logo_url="https://example.com/logo.png",
-        logo_position="top-right",
-        primary_color="#1A3F6F",
-        accent_color="#00B4D8",
-        background_color="#FFFFFF",
-        font_headline="Inter",
-        font_headline_weight="700",
-        font_body="Inter",
-        font_body_weight="400",
-        cta_style="rounded-pill",
-        cta_color="#00B4D8",
-        disclaimer_required=True,
-        disclaimer_text="For investigational use only. Not for clinical diagnosis.",
-        style_default="warm-clinical",
-        image_style=image_style,
-        fda_guardrails=fda,
-        guardrail_terms_blocked=["detects", "prevents", "cures", "treats"],
-        guardrail_terms_required=["consult your physician"],
-        music_default=None,
-    )
+from creative_pack.models import BrandKit
+from creative_pack.expander import expand_brief, _mock_brief
+from creative_pack.config import load_brand_kit
 
 
-# ---------------------------------------------------------------------------
-# Mock expander tests (no API key required)
-# ---------------------------------------------------------------------------
-
-def test_mock_brief_returns_creative_brief():
-    """expand_brief (mock) returns a CreativeBrief instance."""
-    # Ensure no API key is set
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    result = expand_brief(
-        brief="LiverTrace DTC, warm hopeful, adults 40+",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    assert isinstance(result, CreativeBrief), f"Expected CreativeBrief, got {type(result)}"
+def get_test_brand_kit() -> BrandKit:
+    data = load_brand_kit("helio_livertrace")
+    return BrandKit.from_dict(data)
 
 
-def test_mock_brief_has_three_variants():
-    """expand_brief (mock) always returns exactly 3 copy variants."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    result = expand_brief(
-        brief="Test brief",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    assert len(result.copy_variants) == 3, (
-        f"Expected 3 copy variants, got {len(result.copy_variants)}"
-    )
+def test_mock_brief_returns_three_variants():
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    assert len(brief.copy_variants) == 3
 
 
 def test_mock_brief_frameworks():
-    """The three variants should use PAS, AIDA, and emotional frameworks."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    result = expand_brief(
-        brief="Test brief",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    frameworks = {cv.framework for cv in result.copy_variants}
-    assert "PAS" in frameworks, f"Missing PAS framework. Got: {frameworks}"
-    assert "AIDA" in frameworks, f"Missing AIDA framework. Got: {frameworks}"
-    assert "emotional" in frameworks, f"Missing emotional framework. Got: {frameworks}"
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    frameworks = {v.framework for v in brief.copy_variants}
+    assert "PAS" in frameworks
+    assert "AIDA" in frameworks
+    assert "emotional" in frameworks
 
 
-def test_mock_brief_copy_sets_are_copyset_instances():
-    """Each copy variant must be a CopySet instance."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    result = expand_brief(
-        brief="Test brief",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    for cv in result.copy_variants:
-        assert isinstance(cv, CopySet), f"Expected CopySet, got {type(cv)}"
-        assert cv.headline, "Headline must not be empty"
-        assert cv.cta, "CTA must not be empty"
+def test_mock_brief_has_content():
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    for v in brief.copy_variants:
+        assert v.headline, "Headline should not be empty"
+        assert v.cta, "CTA should not be empty"
 
 
-def test_mock_brief_disclaimer_injected_when_fda():
-    """When fda_guardrails=True, all variants must have a disclaimer."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit(fda=True)
-    result = expand_brief(
-        brief="Test",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    for cv in result.copy_variants:
-        assert cv.disclaimer, (
-            f"Expected disclaimer for FDA brand kit, got None for {cv.framework}"
-        )
+def test_mock_brief_disclaimer_injected():
+    kit = get_test_brand_kit()
+    assert kit.disclaimer_required, "LiverTrace should require disclaimer"
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    for v in brief.copy_variants:
+        assert v.disclaimer == kit.disclaimer_text
 
 
-def test_mock_brief_platforms_stored():
-    """The resulting CreativeBrief should store the requested platforms."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    platforms = ["meta_static", "google_display"]
-    result = expand_brief(
-        brief="Test",
-        brand_kit=brand_kit,
-        platforms=platforms,
-    )
-
-    assert result.platforms == platforms
+def test_mock_brief_headline_truncated_for_meta():
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    for v in brief.copy_variants:
+        assert len(v.headline) <= 40, f"Headline too long for meta_static: {v.headline}"
 
 
-# ---------------------------------------------------------------------------
-# Character limit enforcement
-# ---------------------------------------------------------------------------
-
-def test_enforce_char_limits_headline_truncated():
-    """Headlines over platform limit must be truncated with ellipsis."""
-    long_headline = "A" * 100  # Way over meta_static limit of 40
-    cs = CopySet(
-        framework="PAS",
-        headline=long_headline,
-        body="Body text here",
-        cta="Order Now",
-        disclaimer=None,
-    )
-    result = _enforce_char_limits(cs, "meta_static")
-    assert len(result.headline) <= 40, (
-        f"Headline should be ≤40 chars, got {len(result.headline)}"
-    )
-    assert result.headline.endswith("…"), "Truncated headline should end with ellipsis"
+def test_meta_story_body_empty():
+    """meta_story_img has no body text (char limit = 0)."""
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_story_img"])
+    for v in brief.copy_variants:
+        assert v.body == "", f"Body should be empty for meta_story_img, got: {v.body}"
 
 
-def test_enforce_char_limits_body_truncated():
-    """Body text over platform limit must be truncated."""
-    long_body = "B" * 500  # Over meta_static limit of 125
-    cs = CopySet(
-        framework="AIDA",
-        headline="Short headline",
-        body=long_body,
-        cta="Order",
-        disclaimer=None,
-    )
-    result = _enforce_char_limits(cs, "meta_static")
-    assert len(result.body) <= 125, (
-        f"Body should be ≤125 chars, got {len(result.body)}"
-    )
-    assert result.body.endswith("…"), "Truncated body should end with ellipsis"
+def test_expand_brief_falls_back_to_mock_without_key(monkeypatch):
+    """expand_brief should use mock when ANTHROPIC_API_KEY is not set."""
+    monkeypatch.setattr("creative_pack.expander.ANTHROPIC_API_KEY", "")
+    kit = get_test_brand_kit()
+    brief = expand_brief("test brief", kit, ["meta_static"])
+    assert len(brief.copy_variants) == 3
+    assert brief.product_name
 
 
-def test_enforce_char_limits_no_truncation_within_limit():
-    """Text within limits should not be modified."""
-    headline = "Short headline"
-    body = "Short body."
-    cs = CopySet(
-        framework="emotional",
-        headline=headline,
-        body=body,
-        cta="Learn More",
-        disclaimer=None,
-    )
-    result = _enforce_char_limits(cs, "meta_static")
-    assert result.headline == headline, "Headline should be unchanged"
-    assert result.body == body, "Body should be unchanged"
-
-
-def test_enforce_char_limits_google_display():
-    """Google Display has a 30-char headline limit."""
-    cs = CopySet(
-        framework="PAS",
-        headline="This headline is longer than thirty chars",
-        body="Short body",
-        cta="Click",
-        disclaimer=None,
-    )
-    result = _enforce_char_limits(cs, "google_display")
-    assert len(result.headline) <= 30, (
-        f"Google Display headline should be ≤30 chars, got {len(result.headline)}"
-    )
-
-
-def test_mock_brief_body_within_limit():
-    """Mock brief bodies must respect platform character limits."""
-    os.environ.pop("ANTHROPIC_API_KEY", None)
-
-    brand_kit = make_brand_kit()
-    result = expand_brief(
-        brief="Test brief",
-        brand_kit=brand_kit,
-        platforms=["meta_static"],
-    )
-
-    for cv in result.copy_variants:
-        if cv.body:
-            assert len(cv.body) <= 125, (
-                f"Body for {cv.framework} exceeds 125 chars: {len(cv.body)}"
-            )
+def test_creative_brief_has_image_direction():
+    kit = get_test_brand_kit()
+    brief = _mock_brief("test brief", kit, ["meta_static"])
+    assert brief.image_direction, "Image direction should be populated"
+    # Should follow lifestyle-emotional pattern
+    assert any(kw in brief.image_direction.lower() for kw in ["light", "home", "warm", "relief"])
