@@ -1,0 +1,41 @@
+{
+  "client_id": "helio_helioliver",
+  "product_name": "HelioLiver",
+  "logo_url": "https://heliogenomics.com/assets/helioliver-logo-blue.png",
+  "logo_position": "top-right",
+  "primary_color": "#0D2B4E",
+  "accent_color": "#005F8A",
+  "background_color": "#F8FAFC",
+  "font_headline": "Inter",
+  "font_headline_weight": "600",
+  "font_body": "Inter",
+  "font_body_weight": "400",
+  "cta_style": "square",
+  "cta_color": "#005F8A",
+  "disclaimer_required": true,
+  "disclaimer_text": "HelioLiver is a laboratory-developed test (LDT). For professional clinical use only. Not cleared by the FDA for diagnostic purposes. Order only by licensed healthcare providers. Results must be interpreted by a qualified clinician.",
+  "style_default": "clinical",
+  "image_style": "product-focused",
+  "fda_guardrails": true,
+  "guardrail_terms_blocked": [
+    "detects",
+    "prevents",
+    "cures",
+    "treats",
+    "proven to improve",
+    "proven to reduce",
+    "diagnoses",
+    "eliminates",
+    "reverses",
+    "safe",
+    "guaranteed",
+    "definitive",
+    "FDA-approved",
+    "FDA approved"
+  ],
+  "guardrail_terms_required": [
+    "consult your physician",
+    "laboratory-developed test"
+  ],
+  "music_default": null
+}

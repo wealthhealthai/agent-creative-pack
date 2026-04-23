@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ad Creative</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* :root-vars */
+    :root {
+      --primary-color: #1A3F6F;
+      --accent-color: #00B4D8;
+      --cta-color: #00B4D8;
+      --background-color: #ffffff;
+      --font-headline: 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-headline-weight: 700;
+      --font-body-weight: 400;
+      --bg-image: linear-gradient(135deg, #1A3F6F 0%, #00B4D8 100%);
+      --logo-url: none;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--background-color);
+    }
+
+    /* ── Main ad container ─────────────────────────────────── */
+    .ad-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Full-bleed background image ───────────────────────── */
+    .ad-background {
+      position: absolute;
+      inset: 0;
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+    }
+
+    /* ── Dark gradient overlay — bottom 40% ────────────────── */
+    .ad-background::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.82) 0%,
+        rgba(0, 0, 0, 0.55) 30%,
+        rgba(0, 0, 0, 0.15) 55%,
+        rgba(0, 0, 0, 0.00) 100%
+      );
+    }
+
+    /* ── Logo — top right ──────────────────────────────────── */
+    .ad-logo {
+      position: absolute;
+      top: 4%;
+      right: 4%;
+      width: 120px;
+      height: auto;
+      z-index: 10;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+    }
+
+    .ad-logo-fallback {
+      position: absolute;
+      top: 4%;
+      right: 4%;
+      z-index: 10;
+      font-family: var(--font-headline);
+      font-weight: var(--font-headline-weight);
+      font-size: clamp(14px, 2vw, 22px);
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Copy area — bottom-left ───────────────────────────── */
+    .ad-copy {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0 6% 5%;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: clamp(10px, 1.5vh, 20px);
+    }
+
+    /* ── Headline ───────────────────────────────────────────── */
+    .ad-headline {
+      font-family: var(--font-headline);
+      font-weight: var(--font-headline-weight);
+      font-size: clamp(22px, 4.5vw, 52px);
+      line-height: 1.15;
+      color: #ffffff;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      max-width: 80%;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Body copy ──────────────────────────────────────────── */
+    .ad-body {
+      font-family: var(--font-body);
+      font-weight: var(--font-body-weight);
+      font-size: clamp(13px, 2vw, 20px);
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.92);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+      max-width: 70%;
+    }
+
+    /* ── CTA button ─────────────────────────────────────────── */
+    .ad-cta {
+      display: inline-block;
+      background-color: var(--cta-color);
+      color: #ffffff;
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: clamp(13px, 1.8vw, 18px);
+      letter-spacing: 0.02em;
+      padding: 0.75em 1.75em;
+      border-radius: 9999px;
+      box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 2px rgba(255,255,255,0.15);
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    /* ── Disclaimer strip — very bottom ────────────────────── */
+    .ad-disclaimer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.4em 6%;
+      background: rgba(0,0,0,0.35);
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: clamp(8px, 1.1vw, 11px);
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.65);
+      z-index: 20;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Adjust copy area when disclaimer is present ────────── */
+    .has-disclaimer .ad-copy {
+      padding-bottom: calc(5% + 2.5em);
+    }
+  </style>
+</head>
+<body>
+  <!--
+    Ad container — data attributes are injected by the compositor.
+    JavaScript below reads them and populates the DOM.
+  -->
+  <div class="ad-container"
+       data-headline=""
+       data-body=""
+       data-cta="Learn More"
+       data-disclaimer="">
+
+    <!-- Background image layer -->
+    <div class="ad-background"></div>
+
+    <!-- Logo (top-right) — shown if logo URL is available -->
+    <div class="ad-logo-fallback" id="ad-logo-area"></div>
+
+    <!-- Copy layer -->
+    <div class="ad-copy">
+      <h1 class="ad-headline" id="ad-headline"></h1>
+      <p class="ad-body" id="ad-body"></p>
+      <span class="ad-cta" id="ad-cta"></span>
+    </div>
+
+    <!-- Disclaimer strip (conditional) -->
+    <div class="ad-disclaimer" id="ad-disclaimer" style="display:none;"></div>
+
+  </div>
+
+  <script>
+    (function () {
+      var container = document.querySelector('.ad-container');
+      if (!container) return;
+
+      var headline  = container.getAttribute('data-headline')   || '';
+      var body      = container.getAttribute('data-body')       || '';
+      var cta       = container.getAttribute('data-cta')        || 'Learn More';
+      var disc      = container.getAttribute('data-disclaimer') || '';
+
+      // Headline
+      var h = document.getElementById('ad-headline');
+      if (h) h.textContent = headline;
+
+      // Body
+      var b = document.getElementById('ad-body');
+      if (b) {
+        if (body) {
+          b.textContent = body;
+          b.style.display = '';
+        } else {
+          b.style.display = 'none';
+        }
+      }
+
+      // CTA
+      var c = document.getElementById('ad-cta');
+      if (c) c.textContent = cta;
+
+      // Disclaimer
+      var d = document.getElementById('ad-disclaimer');
+      if (d) {
+        if (disc) {
+          d.textContent = disc;
+          d.style.display = '';
+          container.classList.add('has-disclaimer');
+        } else {
+          d.style.display = 'none';
+        }
+      }
+
+      // Logo — try to show as <img> if URL is real
+      var logoArea = document.getElementById('ad-logo-area');
+      if (logoArea) {
+        // The compositor injects --logo-url CSS var; try to extract it
+        var style = getComputedStyle(document.documentElement);
+        var logoUrl = style.getPropertyValue('--logo-url').trim();
+        // Remove url("...") wrapper
+        var match = logoUrl.match(/url\(['"]?([^'"]+)['"]?\)/);
+        if (match && match[1] && match[1] !== 'none') {
+          var img = document.createElement('img');
+          img.src = match[1];
+          img.alt = '';
+          img.className = 'ad-logo';
+          img.style.position = 'absolute';
+          img.style.top = '4%';
+          img.style.right = '4%';
+          img.style.width = '120px';
+          img.style.zIndex = '10';
+          img.style.filter = 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))';
+          // Only show on load success
+          img.onerror = function() { this.style.display = 'none'; };
+          container.appendChild(img);
+          logoArea.style.display = 'none';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

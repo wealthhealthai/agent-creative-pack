@@ -1,0 +1,35 @@
+{
+  "client_id": "helio_livertrace",
+  "product_name": "LiverTrace",
+  "logo_url": "https://heliogenomics.com/assets/livertrace-logo-white.png",
+  "logo_position": "top-right",
+  "primary_color": "#1A3F6F",
+  "accent_color": "#00B4D8",
+  "background_color": "#FFFFFF",
+  "font_headline": "Inter",
+  "font_headline_weight": "700",
+  "font_body": "Inter",
+  "font_body_weight": "400",
+  "cta_style": "rounded-pill",
+  "cta_color": "#00B4D8",
+  "disclaimer_required": true,
+  "disclaimer_text": "For investigational use only. Not for clinical diagnosis.",
+  "style_default": "warm-clinical",
+  "image_style": "lifestyle-emotional",
+  "fda_guardrails": true,
+  "guardrail_terms_blocked": [
+    "detects",
+    "prevents",
+    "cures",
+    "treats",
+    "proven to improve",
+    "proven to reduce",
+    "diagnoses",
+    "eliminates",
+    "reverses"
+  ],
+  "guardrail_terms_required": [
+    "consult your physician"
+  ],
+  "music_default": "warm-hopeful-bed.mp3"
+}

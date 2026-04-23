@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ad Creative — Product Hero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* :root-vars */
+    :root {
+      --primary-color: #0D2B4E;
+      --accent-color: #005F8A;
+      --cta-color: #005F8A;
+      --background-color: #F8FAFC;
+      --font-headline: 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-headline-weight: 600;
+      --font-body-weight: 400;
+      --bg-image: linear-gradient(135deg, #0D2B4E 0%, #005F8A 100%);
+      --logo-url: none;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--background-color);
+    }
+
+    /* ── Main ad container ─────────────────────────────────── */
+    .ad-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* ── Left: product image panel (60%) ───────────────────── */
+    .ad-image-panel {
+      position: relative;
+      width: 60%;
+      height: 100%;
+      flex-shrink: 0;
+    }
+
+    .ad-background {
+      position: absolute;
+      inset: 0;
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+    }
+
+    /* Subtle gradient fade on right edge */
+    .ad-image-panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(0,0,0,0) 60%,
+        var(--background-color) 100%
+      );
+    }
+
+    /* ── Right: copy panel (40%) ────────────────────────────── */
+    .ad-copy-panel {
+      position: relative;
+      width: 40%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5%;
+      z-index: 10;
+      background: var(--background-color);
+    }
+
+    /* ── Logo ──────────────────────────────────────────────── */
+    .ad-logo-area {
+      position: absolute;
+      top: 5%;
+      right: 4%;
+      z-index: 20;
+    }
+
+    .ad-logo {
+      width: 100px;
+      height: auto;
+    }
+
+    .ad-logo-fallback {
+      font-family: var(--font-headline);
+      font-weight: var(--font-headline-weight);
+      font-size: clamp(12px, 1.5vw, 18px);
+      color: var(--primary-color);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Brand accent line ─────────────────────────────────── */
+    .ad-accent-line {
+      width: 40px;
+      height: 3px;
+      background-color: var(--accent-color);
+      margin-bottom: clamp(16px, 2.5vh, 28px);
+    }
+
+    /* ── Headline ───────────────────────────────────────────── */
+    .ad-headline {
+      font-family: var(--font-headline);
+      font-weight: var(--font-headline-weight);
+      font-size: clamp(18px, 3.5vw, 42px);
+      line-height: 1.2;
+      color: var(--primary-color);
+      letter-spacing: -0.01em;
+      margin-bottom: clamp(12px, 1.8vh, 20px);
+    }
+
+    /* ── Body copy ──────────────────────────────────────────── */
+    .ad-body {
+      font-family: var(--font-body);
+      font-weight: 300;
+      font-size: clamp(12px, 1.6vw, 16px);
+      line-height: 1.65;
+      color: rgba(0,0,0,0.65);
+      margin-bottom: clamp(16px, 2.5vh, 28px);
+    }
+
+    /* ── CTA button ─────────────────────────────────────────── */
+    .ad-cta {
+      display: inline-block;
+      background-color: var(--cta-color);
+      color: #ffffff;
+      font-family: var(--font-headline);
+      font-weight: 500;
+      font-size: clamp(12px, 1.5vw, 16px);
+      letter-spacing: 0.03em;
+      padding: 0.7em 1.8em;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+
+    /* ── Disclaimer ─────────────────────────────────────────── */
+    .ad-disclaimer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.5em 5%;
+      background: rgba(0,0,0,0.05);
+      border-top: 1px solid rgba(0,0,0,0.08);
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: clamp(8px, 0.9vw, 10px);
+      line-height: 1.4;
+      color: rgba(0,0,0,0.45);
+      z-index: 30;
+    }
+  </style>
+</head>
+<body>
+  <div class="ad-container"
+       data-headline=""
+       data-body=""
+       data-cta="Learn More"
+       data-disclaimer="">
+
+    <!-- Left: product image -->
+    <div class="ad-image-panel">
+      <div class="ad-background"></div>
+    </div>
+
+    <!-- Right: copy panel -->
+    <div class="ad-copy-panel">
+      <!-- Logo (top-right of copy panel) -->
+      <div class="ad-logo-area">
+        <div class="ad-logo-fallback" id="ad-logo-area"></div>
+      </div>
+
+      <div class="ad-accent-line"></div>
+      <h1 class="ad-headline" id="ad-headline"></h1>
+      <p class="ad-body" id="ad-body"></p>
+      <span class="ad-cta" id="ad-cta"></span>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="ad-disclaimer" id="ad-disclaimer" style="display:none;"></div>
+
+  </div>
+
+  <script>
+    (function () {
+      var container = document.querySelector('.ad-container');
+      if (!container) return;
+
+      var headline  = container.getAttribute('data-headline')   || '';
+      var body      = container.getAttribute('data-body')       || '';
+      var cta       = container.getAttribute('data-cta')        || 'Learn More';
+      var disc      = container.getAttribute('data-disclaimer') || '';
+
+      var h = document.getElementById('ad-headline');
+      if (h) h.textContent = headline;
+
+      var b = document.getElementById('ad-body');
+      if (b) {
+        if (body) { b.textContent = body; b.style.display = ''; }
+        else { b.style.display = 'none'; }
+      }
+
+      var c = document.getElementById('ad-cta');
+      if (c) c.textContent = cta;
+
+      var d = document.getElementById('ad-disclaimer');
+      if (d) {
+        if (disc) { d.textContent = disc; d.style.display = ''; }
+        else { d.style.display = 'none'; }
+      }
+
+      // Logo
+      var logoArea = document.getElementById('ad-logo-area');
+      if (logoArea) {
+        var style = getComputedStyle(document.documentElement);
+        var logoUrl = style.getPropertyValue('--logo-url').trim();
+        var match = logoUrl.match(/url\(['"]?([^'"]+)['"]?\)/);
+        if (match && match[1] && match[1] !== 'none') {
+          var img = document.createElement('img');
+          img.src = match[1];
+          img.alt = '';
+          img.className = 'ad-logo';
+          img.onerror = function() { this.style.display = 'none'; };
+          logoArea.parentNode.insertBefore(img, logoArea);
+          logoArea.style.display = 'none';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
