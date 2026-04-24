@@ -2,22 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- __GOOGLE_FONTS__ -->
-  <title>Ad Creative</title>
+  <title>Ad Creative — Lifestyle</title>
   <style>
-    :root {
-      /* __CSS_VARS__ */
-    }
-
+    :root { /* __CSS_VARS__ */ }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-    }
+    body, html { width: 100%; height: 100%; overflow: hidden; }
 
     .ad-container {
       position: relative;
@@ -27,114 +17,111 @@
       font-family: var(--font-body);
     }
 
-    /* Background image — full bleed */
+    /* Background — full bleed, face always visible */
     .ad-bg {
       position: absolute;
       inset: 0;
-      background-image: var(--bg-image);
       background-size: cover;
-      background-position: center center;
+      background-position: center 20%; /* bias toward faces */
       background-repeat: no-repeat;
     }
 
-    /* Gradient overlay — bottom 50%, strong at bottom */
+    /* Subtle dual vignette — light at top for logo, light at bottom for CTA */
     .ad-overlay {
       position: absolute;
       inset: 0;
       background: linear-gradient(
         to bottom,
-        rgba(0,0,0,0) 0%,
-        rgba(0,0,0,0.05) 35%,
-        rgba(0,0,0,0.6) 65%,
-        rgba(0,0,0,0.88) 100%
+        rgba(0,0,0,0.30) 0%,
+        rgba(0,0,0,0.05) 18%,
+        rgba(0,0,0,0)    35%,
+        rgba(0,0,0,0)    55%,
+        rgba(0,0,0,0.08) 72%,
+        rgba(0,0,0,0.42) 100%
       );
     }
 
-    /* Top bar — logo */
-    .ad-logo {
+    /* ── Logo — top center ── */
+    .ad-logo-area {
       position: absolute;
       top: 5%;
-      right: 5%;
-      max-width: 120px;
-      max-height: 48px;
-      object-fit: contain;
-      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
-      display: none; /* shown by JS if logo URL exists */
-    }
-
-    /* Brand accent bar — top left */
-    .ad-accent-bar {
-      position: absolute;
-      top: 0;
       left: 0;
-      width: 6px;
-      height: 100%;
-      background: var(--accent-color);
-      opacity: 0.9;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .ad-logo {
+      max-height: 36px;
+      max-width: 140px;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 6px rgba(0,0,0,0.5)) brightness(10);
+      display: none;
     }
 
-    /* Content block — bottom left */
-    .ad-content {
+    /* ── Headline block — upper third, centered ── */
+    .ad-headline-area {
+      position: absolute;
+      top: 15%;
+      left: 7%;
+      right: 7%;
+      text-align: center;
+    }
+    .ad-headline {
+      font-family: var(--font-headline);
+      font-weight: var(--font-headline-weight);
+      font-size: clamp(28px, 6vw, 72px);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      text-shadow:
+        0 2px 8px rgba(0,0,0,0.6),
+        0 4px 20px rgba(0,0,0,0.3);
+    }
+    .ad-tagline {
+      margin-top: 3%;
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: clamp(13px, 2.2vw, 24px);
+      color: rgba(255,255,255,0.90);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.55);
+      line-height: 1.4;
+    }
+
+    /* ── CTA + Disclaimer — bottom ── */
+    .ad-bottom {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      padding: 6% 6% 5% 6%;
-      color: #ffffff;
+      padding: 3% 8% 3.5%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5%;
     }
-
-    .ad-headline {
-      font-family: var(--font-headline);
-      font-weight: var(--font-headline-weight);
-      font-size: clamp(28px, 5vw, 64px);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
-      margin-bottom: 3%;
-    }
-
-    .ad-body {
-      font-family: var(--font-body);
-      font-weight: 400;
-      font-size: clamp(14px, 2.2vw, 26px);
-      line-height: 1.45;
-      opacity: 0.92;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-      margin-bottom: 5%;
-      max-width: 80%;
-    }
-
     .ad-cta {
       display: inline-block;
       background: var(--cta-color);
       color: #ffffff;
       font-family: var(--font-headline);
       font-weight: 700;
-      font-size: clamp(13px, 1.8vw, 22px);
-      letter-spacing: 0.02em;
-      padding: 3% 7%;
+      font-size: clamp(14px, 2vw, 22px);
+      letter-spacing: 0.01em;
+      padding: 3.5% 10%;
       border-radius: 9999px;
-      text-decoration: none;
       cursor: default;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      white-space: nowrap;
       text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+      white-space: nowrap;
     }
-
-    /* Disclaimer — very bottom strip */
     .ad-disclaimer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 1.5% 6%;
-      background: rgba(0,0,0,0.55);
-      font-family: var(--font-body);
-      font-size: clamp(8px, 1.1vw, 13px);
-      font-weight: 400;
-      color: rgba(255,255,255,0.7);
+      font-size: clamp(8px, 1.1vw, 12px);
+      color: rgba(255,255,255,0.65);
+      text-align: center;
       line-height: 1.3;
-      display: none; /* shown by JS */
+      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      display: none;
     }
   </style>
 </head>
@@ -148,61 +135,60 @@
        data-logo-url=""
        data-bg-url="">
 
-    <div class="ad-bg"></div>
+    <div class="ad-bg" id="bg"></div>
     <div class="ad-overlay"></div>
-    <div class="ad-accent-bar"></div>
 
-    <img class="ad-logo" src="" alt="Brand logo" id="logo">
-
-    <div class="ad-content" id="content">
-      <div class="ad-headline" id="headline"></div>
-      <div class="ad-body" id="body"></div>
-      <div class="ad-cta" id="cta"></div>
+    <!-- Logo top center -->
+    <div class="ad-logo-area">
+      <img class="ad-logo" id="logo" src="" alt="logo">
     </div>
 
-    <div class="ad-disclaimer" id="disclaimer"></div>
+    <!-- Headline upper third, centered -->
+    <div class="ad-headline-area">
+      <div class="ad-headline" id="headline"></div>
+      <div class="ad-tagline" id="body"></div>
+    </div>
+
+    <!-- CTA + disclaimer bottom -->
+    <div class="ad-bottom">
+      <div class="ad-cta" id="cta"></div>
+      <div class="ad-disclaimer" id="disclaimer"></div>
+    </div>
   </div>
 
   <script>
-    const container = document.querySelector('.ad-container');
-    const headline = document.getElementById('headline');
-    const body = document.getElementById('body');
-    const cta = document.getElementById('cta');
-    const disclaimer = document.getElementById('disclaimer');
-    const logo = document.getElementById('logo');
-    const content = document.getElementById('content');
+    const c = document.querySelector('.ad-container');
 
-    // Set background image directly — CSS variable approach fails for large images in Playwright
-    const bgUrl = container.dataset.bgUrl || '';
+    // Background image — direct style, avoids CSS variable limitations
+    const bgUrl = c.dataset.bgUrl || '';
     if (bgUrl) {
-      document.querySelector('.ad-bg').style.backgroundImage = `url("${bgUrl}")`;
+      document.getElementById('bg').style.backgroundImage = `url("${bgUrl}")`;
     }
 
-    // Populate from data attributes
-    headline.textContent = container.dataset.headline || '';
-    body.textContent = container.dataset.body || '';
-    cta.textContent = container.dataset.cta || '';
+    // Copy
+    document.getElementById('headline').textContent = c.dataset.headline || '';
+    document.getElementById('body').textContent = c.dataset.body || '';
+    document.getElementById('cta').textContent = c.dataset.cta || '';
 
-    const disclaimerText = container.dataset.disclaimer || '';
-    const showDisclaimer = container.dataset.showDisclaimer === 'true';
-
-    if (disclaimerText && showDisclaimer) {
-      disclaimer.textContent = disclaimerText;
-      disclaimer.style.display = 'block';
-      // Adjust content bottom padding to avoid overlap
-      content.style.paddingBottom = '10%';
+    // Disclaimer
+    const disc = c.dataset.disclaimer || '';
+    if (disc && c.dataset.showDisclaimer === 'true') {
+      const el = document.getElementById('disclaimer');
+      el.textContent = disc;
+      el.style.display = 'block';
     }
 
-    // Hide body text if empty (Story format)
-    if (!body.textContent.trim()) {
-      body.style.display = 'none';
+    // Hide tagline if empty
+    if (!document.getElementById('body').textContent.trim()) {
+      document.getElementById('body').style.display = 'none';
     }
 
     // Logo
-    const logoUrl = container.dataset.logoUrl || '';
-    if (logoUrl && logoUrl !== 'url()' && !logoUrl.includes('undefined')) {
-      logo.src = logoUrl;
-      logo.style.display = 'block';
+    const logoUrl = c.dataset.logoUrl || '';
+    if (logoUrl && !logoUrl.includes('undefined')) {
+      const l = document.getElementById('logo');
+      l.src = logoUrl;
+      l.style.display = 'block';
     }
   </script>
 </body>
