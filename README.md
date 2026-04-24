@@ -114,6 +114,16 @@ paths = generate_variants("test ad", "helio_livertrace", "meta_static", count=3)
 
 ---
 
+## For Agents Integrating Forge Imagine
+
+**Read [`AGENT_GUIDE.md`](./AGENT_GUIDE.md) before generating anything.**
+
+The short version: do not generate ads without first building a knowledge pack for the client. The knowledge pack lives at `brand_kits/<client_id>_knowledge.md` and is built by the agent through onboarding — not by filling out a form. Pull shared context from other gateway agents first. Only ask what you don't already know.
+
+A LiverTrace example knowledge pack is at `brand_kits/helio_livertrace_knowledge.md`.
+
+---
+
 ## Adding a New Client
 
 1. Create `brand_kits/<client_id>.json` (copy helio_livertrace.json as template)
