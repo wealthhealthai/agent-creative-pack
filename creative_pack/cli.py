@@ -37,7 +37,8 @@ def main():
     parser.add_argument("--product-image", default=None, help="Product image URL for bg removal")
     parser.add_argument("--product-url", default=None, help="Product page URL to scrape")
     parser.add_argument("--model", default=None,
-                        choices=["flux-pro", "flux-ultra", "recraft-v3", "nano-banana-pro"],
+                        choices=["flux-pro", "flux-ultra", "recraft-v3", "nano-banana-pro",
+                                 "flux-ultra-redux", "recraft-v3-i2i", "kontext-pro", "flux2-edit"],
                         help="Image generation model (default: flux-pro)")
 
     args = parser.parse_args()

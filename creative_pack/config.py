@@ -65,11 +65,18 @@ def get_platform_spec(platform: str) -> dict:
 
 # ── Image generation model registry ───────────────────────────────────────
 IMAGE_MODELS = {
-    "flux-pro":       {"id": "fal-ai/flux-pro/v1.1",       "provider": "fal",    "cost": 0.04, "note": "Default baseline"},
-    "flux-ultra":     {"id": "fal-ai/flux-pro/v1.1-ultra",  "provider": "fal",    "cost": 0.06, "note": "High quality general purpose"},
-    "recraft-v3":     {"id": "fal-ai/recraft-v3",           "provider": "fal",    "cost": 0.04, "note": "Cinematic/lifestyle feel"},
-    "nano-banana-pro":{"id": "gemini-3-pro-image-preview",  "provider": "google", "cost": 0.04, "note": "Maximum photorealism — top pick for DTC health"},
-    "kontext-pro":    {"id": "fal-ai/flux-kontext/pro",     "provider": "fal",    "cost": 0.08, "note": "Product compositing + iterative editing (NOT text-to-image)"},
+    # Text-to-image (no image input)
+    "flux-pro":           {"id": "fal-ai/flux-pro/v1.1",            "provider": "fal",    "cost": 0.04, "img2img": False, "note": "Default baseline"},
+    "flux-ultra":         {"id": "fal-ai/flux-pro/v1.1-ultra",       "provider": "fal",    "cost": 0.06, "img2img": False, "note": "High quality general purpose"},
+    "recraft-v3":         {"id": "fal-ai/recraft-v3",                "provider": "fal",    "cost": 0.04, "img2img": False, "note": "Cinematic/lifestyle feel — text only"},
+    # Multimodal (understands + reconstructs product faithfully)
+    "nano-banana-pro":    {"id": "gemini-3-pro-image-preview",       "provider": "google", "cost": 0.04, "img2img": True,  "note": "Maximum photorealism + MULTIMODAL — faithfully reconstructs products from photo"},
+    # Image-to-image / reference variants (style reference, NOT faithful reconstruction)
+    "flux-ultra-redux":   {"id": "fal-ai/flux-pro/v1.1-ultra/redux", "provider": "fal",    "cost": 0.06, "img2img": True,  "note": "Flux Ultra img2img — style variation from reference"},
+    "recraft-v3-i2i":     {"id": "fal-ai/recraft/v3/image-to-image", "provider": "fal",    "cost": 0.04, "img2img": True,  "note": "Recraft img2img — style reference"},
+    # Editing / compositing (Phase 2)
+    "kontext-pro":        {"id": "fal-ai/flux-kontext/pro",          "provider": "fal",    "cost": 0.08, "img2img": True,  "note": "Surgical product compositing + scene editing — Phase 2"},
+    "flux2-edit":         {"id": "fal-ai/flux-2-pro/edit",           "provider": "fal",    "cost": 0.08, "img2img": True,  "note": "Multi-reference editing up to 9 images — Phase 2"},
 }
 DEFAULT_MODEL = "flux-pro"
 
