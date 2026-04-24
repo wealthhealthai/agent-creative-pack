@@ -13,7 +13,7 @@ from pathlib import Path
 from string import Template
 
 from .models import CopySet, BrandKit
-from .config import TEMPLATES_DIR, get_platform_spec
+from .config import TEMPLATES_DIR, get_platform_spec, get_copy_limits
 
 # Template name → file
 TEMPLATE_FILES = {
@@ -21,6 +21,22 @@ TEMPLATE_FILES = {
     "product_hero":  "product_hero.html",
     "minimal":       "minimal.html",
 }
+
+
+def _truncate_copy_for_platform(copy_set: CopySet, platform: str) -> CopySet:
+    """Return a copy of CopySet with text truncated to this platform's character limits."""
+    import copy as copy_module
+    cs = copy_module.copy(copy_set)
+    lim = get_copy_limits(platform)
+    hl_max = lim.get("headline", 0)
+    body_max = lim.get("body", 0)
+    if hl_max and len(cs.headline) > hl_max:
+        cs.headline = cs.headline[:hl_max - 1] + "…"
+    if body_max == 0:
+        cs.body = ""
+    elif body_max and len(cs.body) > body_max:
+        cs.body = cs.body[:body_max - 1] + "…"
+    return cs
 
 
 def _image_to_data_url(image_path: str) -> str:
@@ -113,6 +129,9 @@ def composite_ad(
     spec = get_platform_spec(platform)
     w, h = spec["w"], spec["h"]
     fmt = spec.get("fmt", "png")
+
+    # Truncate copy to this platform's character limits
+    copy_set = _truncate_copy_for_platform(copy_set, platform)
 
     # Convert background image to data URL for embedding
     bg_data_url = _image_to_data_url(image_path) if image_path else ""

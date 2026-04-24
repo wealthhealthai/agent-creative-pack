@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from creative_pack.models import CopySet, BrandKit
-from creative_pack.compositor import composite_ad
+from creative_pack.compositor import composite_ad, _truncate_copy_for_platform
 from creative_pack.config import load_brand_kit
 
 
@@ -119,6 +119,29 @@ def test_compositor_minimal_template():
 
         assert os.path.exists(out_path)
         assert os.path.getsize(out_path) > 1000
+
+
+def test_per_platform_truncation():
+    """Compositor truncates headline/body to platform-specific limits."""
+    long_copy = CopySet(
+        framework="PAS",
+        headline="This headline is way too long and exceeds forty characters easily",
+        body="This is a long body that exceeds the 125-char limit for meta " * 3,
+        cta="Order Now",
+        disclaimer=None,
+    )
+    # meta_static: headline≤40, body≤125
+    truncated = _truncate_copy_for_platform(long_copy, "meta_static")
+    assert len(truncated.headline) <= 40, f"Headline not truncated: {len(truncated.headline)}"
+    assert len(truncated.body) <= 125, f"Body not truncated: {len(truncated.body)}"
+
+    # meta_story_img: body=0
+    story_copy = _truncate_copy_for_platform(long_copy, "meta_story_img")
+    assert story_copy.body == "", "Story body should be empty"
+
+    # google_display: headline≤30
+    display_copy = _truncate_copy_for_platform(long_copy, "google_display")
+    assert len(display_copy.headline) <= 30, f"GD headline not truncated: {len(display_copy.headline)}"
 
 
 def test_compositor_google_display():

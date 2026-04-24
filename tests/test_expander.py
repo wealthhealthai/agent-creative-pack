@@ -45,19 +45,23 @@ def test_mock_brief_disclaimer_injected():
         assert v.disclaimer == kit.disclaimer_text
 
 
-def test_mock_brief_headline_truncated_for_meta():
+def test_mock_brief_headline_not_pre_truncated():
+    """Expander now generates full-length copy. Truncation happens in compositor per-platform."""
     kit = get_test_brand_kit()
     brief = _mock_brief("test brief", kit, ["meta_static"])
     for v in brief.copy_variants:
-        assert len(v.headline) <= 40, f"Headline too long for meta_static: {v.headline}"
+        # Headlines should have content — length enforcement is compositor's job now
+        assert v.headline, "Headline should not be empty"
 
 
-def test_meta_story_body_empty():
-    """meta_story_img has no body text (char limit = 0)."""
+def test_meta_story_body_not_cleared_by_expander():
+    """meta_story_img body clearing now happens in compositor, not expander."""
     kit = get_test_brand_kit()
     brief = _mock_brief("test brief", kit, ["meta_story_img"])
-    for v in brief.copy_variants:
-        assert v.body == "", f"Body should be empty for meta_story_img, got: {v.body}"
+    # Expander generates full copy — compositor handles per-platform limits
+    # At least some variants should have non-empty body from the expander
+    has_body = any(v.body for v in brief.copy_variants)
+    assert has_body, "Expander should generate body copy (compositor clears for story platforms)"
 
 
 def test_expand_brief_falls_back_to_mock_without_key(monkeypatch):

@@ -133,16 +133,8 @@ def _mock_brief(brief: str, brand_kit: BrandKit, platforms: list[str]) -> Creati
         ),
     ]
 
-    # Truncate to platform limits — apply strictest limit across all requested platforms
-    for v in variants:
-        for p in platforms:
-            lim = get_copy_limits(p)
-            if lim["headline"] and len(v.headline) > lim["headline"]:
-                v.headline = v.headline[:lim["headline"] - 1] + "…"
-            if lim["body"] == 0:
-                v.body = ""
-            elif lim["body"] and len(v.body) > lim["body"]:
-                v.body = v.body[:lim["body"] - 1] + "…"
+    # Note: character limit enforcement happens at composite time (per-platform).
+    # The expander generates full-length copy; compositor truncates for each specific platform.
 
     return CreativeBrief(
         product_name=product,
