@@ -6,7 +6,7 @@ import os
 import uuid
 from pathlib import Path
 from .models import CreativeBrief, CopySet, BrandKit
-from .config import FAL_API_KEY, MOCK_MODE, get_platform_spec
+from .config import FAL_API_KEY, MOCK_MODE, get_platform_spec, get_model_config, DEFAULT_MODEL
 
 
 def build_image_prompt(brief: CreativeBrief, brand_kit: BrandKit, copy_set: CopySet) -> str:
@@ -124,48 +124,103 @@ def generate_image(
     output_dir: str,
     style: str = "lifestyle",
     index: int = 0,
+    model: str | None = None,
 ) -> str:
     """
     Generate a background image for an ad.
-    Real mode: calls fal-ai/flux-pro/v1.1
-    Mock mode: generates placeholder PNG
+    model: one of the keys in IMAGE_MODELS (e.g. 'flux-pro', 'recraft-v3', 'nano-banana-pro')
+    Falls back to placeholder PNG in mock mode.
     Returns local file path.
     """
+    model = model or DEFAULT_MODEL
     if MOCK_MODE or not FAL_API_KEY:
-        print(f"[generator] MOCK MODE — would call Flux with: {prompt[:80]}...")
+        print(f"[generator] MOCK MODE — would call {model} with: {prompt[:80]}...")
         return _generate_placeholder(platform, output_dir, index)
 
-    # TODO: Real fal.ai call (swap in when FAL_API_KEY is set)
     try:
-        import fal_client
-        spec = get_platform_spec(platform)
-        w, h = spec["w"], spec["h"]
+        model_cfg = get_model_config(model)
+    except ValueError as e:
+        print(f"[generator] {e}, falling back to placeholder")
+        return _generate_placeholder(platform, output_dir, index)
 
-        result = fal_client.run(
-            "fal-ai/flux-pro/v1.1",
-            arguments={
-                "prompt": prompt,
-                "image_size": {"width": w, "height": h},
-                "num_inference_steps": 28,
-                "guidance_scale": 3.5,
-                "num_images": 1,
-                "output_format": "png",
-            }
-        )
+    spec = get_platform_spec(platform)
+    w, h = spec["w"], spec["h"]
+    output_path = Path(output_dir) / f"generated_{platform}_{model}_{index}.png"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    provider = model_cfg["provider"]
+
+    # ── Google (Nano Banana Pro) ──────────────────────────────────────────
+    if provider == "google":
+        return _generate_google(prompt, model_cfg["id"], output_path, w, h)
+
+    # ── fal.ai ────────────────────────────────────────────────────────────
+    return _generate_fal(prompt, model_cfg["id"], output_path, w, h, platform, index)
+
+
+def _generate_fal(prompt: str, model_id: str, output_path: Path, w: int, h: int,
+                  platform: str, index: int) -> str:
+    try:
+        import fal_client, requests
+        kwargs = {
+            "prompt": prompt,
+            "image_size": {"width": w, "height": h},
+            "num_images": 1,
+            "output_format": "png",
+        }
+        # Recraft uses slightly different schema
+        if "recraft" in model_id:
+            kwargs["style"] = "realistic_image"
+            del kwargs["output_format"]
+        else:
+            kwargs["num_inference_steps"] = 28
+            kwargs["guidance_scale"] = 3.5
+
+        result = fal_client.run(model_id, arguments=kwargs)
         image_url = result["images"][0]["url"]
-
-        import requests
         r = requests.get(image_url, timeout=60)
         r.raise_for_status()
-
-        ext = "png"
-        output_path = Path(output_dir) / f"generated_{platform}_{index}.{ext}"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_bytes(r.content)
-        print(f"[generator] Image saved: {output_path}")
+        print(f"[generator] {model_id} → {output_path}")
         return str(output_path)
-
     except Exception as e:
-        print(f"[generator] fal.ai call failed ({e}), falling back to placeholder")
-        return _generate_placeholder(platform, output_dir, index)
+        print(f"[generator] fal.ai ({model_id}) failed: {e}, falling back to placeholder")
+        from .config import get_platform_spec
+        return _generate_placeholder(platform if platform else "meta_static",
+                                     str(output_path.parent), index)
+
+
+def _generate_google(prompt: str, model_id: str, output_path: Path, w: int, h: int) -> str:
+    """Generate via Nano Banana Pro (Google Gemini Image API)."""
+    import os, subprocess, sys
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        from .config import PACKAGE_ROOT
+        import json
+        try:
+            oc_config = PACKAGE_ROOT.parent.parent.parent / ".openclaw" / "openclaw.json"
+            with open(oc_config) as f:
+                d = json.load(f)
+            gemini_key = d.get("skills", {}).get("entries", {}).get("nano-banana-pro", {}).get("apiKey", "")
+        except Exception:
+            pass
+
+    if not gemini_key:
+        print("[generator] No GEMINI_API_KEY — falling back to placeholder")
+        return _generate_placeholder("meta_static", str(output_path.parent), 0)
+
+    skill_script = "/opt/homebrew/lib/node_modules/openclaw/skills/nano-banana-pro/scripts/generate_image.py"
+    result = subprocess.run(
+        ["uv", "run", skill_script,
+         "--prompt", prompt,
+         "--filename", str(output_path),
+         "--resolution", "1K"],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "GEMINI_API_KEY": gemini_key}
+    )
+    if result.returncode == 0 and output_path.exists():
+        print(f"[generator] Nano Banana Pro → {output_path}")
+        return str(output_path)
+    else:
+        print(f"[generator] Nano Banana Pro failed: {result.stderr[:200]}")
+        return _generate_placeholder("meta_static", str(output_path.parent), 0)

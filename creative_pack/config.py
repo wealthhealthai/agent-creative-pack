@@ -63,6 +63,23 @@ def get_platform_spec(platform: str) -> dict:
     return PLATFORM_SPECS[platform]
 
 
+# ── Image generation model registry ───────────────────────────────────────
+IMAGE_MODELS = {
+    "flux-pro":       {"id": "fal-ai/flux-pro/v1.1",       "provider": "fal",    "cost": 0.04, "note": "Default baseline"},
+    "flux-ultra":     {"id": "fal-ai/flux-pro/v1.1-ultra",  "provider": "fal",    "cost": 0.06, "note": "High quality general purpose"},
+    "recraft-v3":     {"id": "fal-ai/recraft-v3",           "provider": "fal",    "cost": 0.04, "note": "Cinematic/lifestyle feel"},
+    "nano-banana-pro":{"id": "gemini-3-pro-image-preview",  "provider": "google", "cost": 0.04, "note": "Maximum photorealism — top pick for DTC health"},
+    "kontext-pro":    {"id": "fal-ai/flux-kontext/pro",     "provider": "fal",    "cost": 0.08, "note": "Product compositing + iterative editing (NOT text-to-image)"},
+}
+DEFAULT_MODEL = "flux-pro"
+
+
+def get_model_config(model_name: str) -> dict:
+    if model_name not in IMAGE_MODELS:
+        raise ValueError(f"Unknown model: {model_name}. Available: {list(IMAGE_MODELS.keys())}")
+    return IMAGE_MODELS[model_name]
+
+
 def get_copy_limits(platform: str) -> dict:
     return PLATFORM_COPY_LIMITS.get(platform, PLATFORM_COPY_LIMITS["default"])
 

@@ -36,6 +36,9 @@ def main():
     parser.add_argument("--variants", type=int, default=3, help="Number of copy variants (1-3)")
     parser.add_argument("--product-image", default=None, help="Product image URL for bg removal")
     parser.add_argument("--product-url", default=None, help="Product page URL to scrape")
+    parser.add_argument("--model", default=None,
+                        choices=["flux-pro", "flux-ultra", "recraft-v3", "nano-banana-pro"],
+                        help="Image generation model (default: flux-pro)")
 
     args = parser.parse_args()
 
@@ -57,6 +60,7 @@ def main():
             copy_variants=min(args.variants, 3),
             template=args.template,
             output_dir=args.output,
+            model=args.model,
         )
 
         # Serialize copy variants

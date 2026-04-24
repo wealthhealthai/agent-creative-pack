@@ -31,6 +31,7 @@ def generate_ad_set(
     output_mode: str = "ad",
     template: str = "lifestyle",
     output_dir: str | None = None,
+    model: str | None = None,
 ) -> AdJobResult:
     """
     Full pipeline: brief → expanded copy → image → composite → export.
@@ -80,6 +81,7 @@ def generate_ad_set(
             platform=platform,
             output_dir=output_dir,
             style=creative_brief.style,
+            model=model,
         )
 
         # Composite each copy variant

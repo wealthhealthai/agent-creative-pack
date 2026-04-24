@@ -129,6 +129,26 @@ Add one entry to `PLATFORM_SPECS` in `creative_pack/config.py`:
 
 ---
 
+## Image Generation Model Guide
+
+Choose based on desired aesthetic. All available on fal.ai (or Google API for Nano Banana Pro).
+
+| Model | fal.ai ID | Cost | Best For | Notes |
+|-------|-----------|------|----------|-------|
+| **Nano Banana Pro** | Google API (`gemini-3-pro-image-preview`) | ~$0.04 | **Maximum photorealism** — our top pick for DTC health ads | Gemini 3 Pro Image. Wins on convincing real-world skin/lighting. |
+| **Recraft V3** | `fal-ai/recraft-v3` | ~$0.04 | **Cinematic / lifestyle feel** — dramatic, editorial look | Excellent style consistency. Great for emotional/aspirational DTC. |
+| **Flux 1.1 Pro Ultra** | `fal-ai/flux-pro/v1.1-ultra` | ~$0.06 | High quality general purpose | Upgrade from Flux 1.1 Pro. Good all-rounder. |
+| **Flux 1.1 Pro** | `fal-ai/flux-pro/v1.1` | $0.04 | Default / budget baseline | Default in pipeline. Solid quality. |
+| **Flux Kontext Pro** | `fal-ai/flux-kontext/pro` | ~$0.08 | **Product compositing + iterative editing** | NOT text-to-image. Takes an existing scene + places real product photo in naturally. Use for product-in-scene compositing (Phase 2). |
+
+**Recommended defaults by use case:**
+- DTC health (consumer-facing): **Nano Banana Pro** (realism) or **Recraft V3** (cinematic)
+- Physician-facing / clinical: **Recraft V3** (clean, professional)
+- Product compositing: **Flux Kontext Pro** as post-generation step
+- Budget / high volume: **Flux 1.1 Pro**
+
+Set via `generator.py` model string or `--model` CLI flag (coming in next update).
+
 ## Supported Platforms
 
 | Platform | Dimensions | Format |
