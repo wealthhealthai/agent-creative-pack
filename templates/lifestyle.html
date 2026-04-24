@@ -145,7 +145,8 @@
        data-cta=""
        data-disclaimer=""
        data-show-disclaimer="false"
-       data-logo-url="">
+       data-logo-url=""
+       data-bg-url="">
 
     <div class="ad-bg"></div>
     <div class="ad-overlay"></div>
@@ -170,6 +171,12 @@
     const disclaimer = document.getElementById('disclaimer');
     const logo = document.getElementById('logo');
     const content = document.getElementById('content');
+
+    // Set background image directly — CSS variable approach fails for large images in Playwright
+    const bgUrl = container.dataset.bgUrl || '';
+    if (bgUrl) {
+      document.querySelector('.ad-bg').style.backgroundImage = `url("${bgUrl}")`;
+    }
 
     // Populate from data attributes
     headline.textContent = container.dataset.headline || '';

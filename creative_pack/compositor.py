@@ -3,7 +3,6 @@ Stage 4 — HTML/CSS → Playwright compositor.
 Renders ad templates at exact platform viewport dimensions.
 This is the quality core of the pipeline — no PIL for text/layout.
 """
-import base64
 import json
 import os
 import re
@@ -39,21 +38,12 @@ def _truncate_copy_for_platform(copy_set: CopySet, platform: str) -> CopySet:
     return cs
 
 
-def _image_to_data_url(image_path: str) -> str:
-    """Convert a local image file to a base64 data URL for embedding in HTML."""
-    path = Path(image_path)
+def _image_to_file_url(image_path: str) -> str:
+    """Convert a local image path to a file:// URL for use in Playwright-rendered HTML."""
+    path = Path(image_path).resolve()
     if not path.exists():
         return ""
-    ext = path.suffix.lower().lstrip(".")
-    mime = {
-        "png": "image/png",
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "gif": "image/gif",
-        "webp": "image/webp",
-    }.get(ext, "image/png")
-    data = base64.b64encode(path.read_bytes()).decode()
-    return f"data:{mime};base64,{data}"
+    return path.as_uri()  # e.g. file:///tmp/generated_meta_static_0.png
 
 
 def _load_template(template_name: str) -> str:
@@ -65,12 +55,13 @@ def _load_template(template_name: str) -> str:
     return template_path.read_text()
 
 
-def _inject_content(html: str, copy_set: CopySet, brand_kit: BrandKit, bg_data_url: str) -> str:
+def _inject_content(html: str, copy_set: CopySet, brand_kit: BrandKit, bg_url: str) -> str:
     """
-    Inject dynamic content into the HTML template by replacing
-    CSS variables and data attributes.
+    Inject dynamic content into the HTML template.
+    Background image is passed as a file:// URL via data-bg-url attribute.
+    CSS variables handle brand colors/fonts only (no large image data).
     """
-    # Build the CSS variables block
+    # Build the CSS variables block — brand colors and fonts only
     css_vars = f"""
         --primary-color: {brand_kit.primary_color};
         --accent-color: {brand_kit.accent_color};
@@ -80,20 +71,19 @@ def _inject_content(html: str, copy_set: CopySet, brand_kit: BrandKit, bg_data_u
         --font-body: '{brand_kit.font_body}', sans-serif;
         --font-headline-weight: {brand_kit.font_headline_weight};
         --font-body-weight: {brand_kit.font_body_weight};
-        --bg-image: url('{bg_data_url}');
-        --logo-url: url('{brand_kit.logo_url}');
     """
 
-    # Escape content for HTML attribute injection
     def esc(s: str) -> str:
         if not s:
             return ""
         return s.replace('"', '&quot;').replace("'", "&#39;")
 
-    # Replace CSS vars placeholder
     html = html.replace("/* __CSS_VARS__ */", css_vars)
 
-    # Replace data attributes on the ad container
+    # Inject background image URL as data attribute (JS sets it directly)
+    html = html.replace('data-bg-url=""', f'data-bg-url="{esc(bg_url)}"')
+
+    # Inject copy data attributes
     html = html.replace('data-headline=""', f'data-headline="{esc(copy_set.headline)}"')
     html = html.replace('data-body=""', f'data-body="{esc(copy_set.body)}"')
     html = html.replace('data-cta=""', f'data-cta="{esc(copy_set.cta)}"')
@@ -103,7 +93,7 @@ def _inject_content(html: str, copy_set: CopySet, brand_kit: BrandKit, bg_data_u
                         f'data-show-disclaimer="{"true" if disclaimer else "false"}"')
     html = html.replace('data-logo-url=""', f'data-logo-url="{esc(brand_kit.logo_url)}"')
 
-    # Inject Google Fonts
+    # Google Fonts
     google_font = brand_kit.font_headline
     font_link = f'<link href="https://fonts.googleapis.com/css2?family={google_font.replace(" ", "+")}:wght@400;700;900&display=swap" rel="stylesheet">'
     html = html.replace("<!-- __GOOGLE_FONTS__ -->", font_link)
@@ -133,12 +123,12 @@ def composite_ad(
     # Truncate copy to this platform's character limits
     copy_set = _truncate_copy_for_platform(copy_set, platform)
 
-    # Convert background image to data URL for embedding
-    bg_data_url = _image_to_data_url(image_path) if image_path else ""
+    # Get background image as file:// URL (reliable in Playwright, no base64 size issues)
+    bg_url = _image_to_file_url(image_path) if image_path else ""
 
     # Load and populate template
     html = _load_template(template)
-    html = _inject_content(html, copy_set, brand_kit, bg_data_url)
+    html = _inject_content(html, copy_set, brand_kit, bg_url)
 
     # Write populated HTML to temp file
     with tempfile.NamedTemporaryFile(

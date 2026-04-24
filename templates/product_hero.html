@@ -121,7 +121,8 @@
        data-cta=""
        data-disclaimer=""
        data-show-disclaimer="false"
-       data-logo-url="">
+       data-logo-url=""
+       data-bg-url="">
 
     <div class="ad-top-stripe"></div>
 
@@ -144,6 +145,8 @@
 
   <script>
     const c = document.querySelector('.ad-container');
+    const bgUrl = c.dataset.bgUrl || '';
+    if (bgUrl) { document.querySelector('.ad-image-panel').style.backgroundImage = `url("${bgUrl}")`; }
     document.getElementById('headline').textContent = c.dataset.headline || '';
     document.getElementById('body').textContent = c.dataset.body || '';
     document.getElementById('cta').textContent = c.dataset.cta || '';
