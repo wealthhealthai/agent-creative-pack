@@ -27,14 +27,14 @@ Before touching any external source, exhaust internal knowledge in this order:
   - If it exists but is outdated or thin → note the gaps, proceed to 0b/0c for those gaps only
 
 ### 0b — Query Other Agents (if on a shared gateway)
-- Query Archon, Helena, or any other agent that works with this client
+- Query any agent on the same gateway that has context about this client
 - Do not duplicate conversations the user has already had with other agents
 - Pass whatever you find into `gather_build_material(prior_context=...)` as agent memory
 
 ### 0c — Scrape the URL (if needed)
-- Only reach for `scrape_text(url)` after 0a and 0b are exhausted or insufficient
-- Pass all internal context collected above into `gather_build_material(prior_context=...)` first
-- If `ScraperBlockedError` is raised: stop, tell the user clearly, ask them to paste or upload product content. Never hallucinate.
+- Only reach for `gather_build_material(client_id, product_slug, url=url, prior_context=...)` after 0a and 0b are exhausted or insufficient
+- Always pass internal context collected in 0a/0b via `prior_context=` — do not scrape blind
+- If `ScraperBlockedError` is raised: stop, tell the user clearly, ask them to paste or upload product content, then call `gather_build_material(..., user_provided_text=...)`. Never hallucinate.
 
 ### Rule: Internal knowledge takes precedence
 If your memory and the scraped content conflict, trust your memory. You were explicitly loaded with accurate information. Scraped marketing copy may be aspirational, outdated, or imprecise — your preloaded context was provided by someone who knows the product.
@@ -83,9 +83,10 @@ If no knowledge file exists, or if it's incomplete, conduct the onboarding conve
 
 ## Step 2 — Write the Knowledge File
 
-Once you have enough context, write it to:
+Once you have enough context, synthesize it and call `write_knowledge_pack()` from `knowledge_builder.py`.
+The file is written to:
 ```
-brand_kits/<client_id>_knowledge.md
+knowledge/{client_id}_{product_slug}_knowledge.md
 ```
 
 Write it in plain language as if briefing a copywriter. Not a database schema — a brief. Include everything a creative professional would need to write compelling, accurate, compliant ad copy for this client without asking a single follow-up question.

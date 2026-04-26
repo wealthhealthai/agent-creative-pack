@@ -15,6 +15,7 @@ from .compositor import composite_ad
 from .exporter import export_to_platforms, calculate_cost
 from .knowledge_builder import (
     scrape_text,
+    list_knowledge_packs,
     load_knowledge_pack,
     write_knowledge_pack,
     gather_build_material,

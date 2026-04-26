@@ -32,9 +32,10 @@ CALLING AGENT RESPONSIBILITIES (not automated here)
 
 PUBLIC API
 ----------
-    scrape_text(url)                          → ScrapeResult | raises ScraperBlockedError
-    load_knowledge_pack(client_id, slug)      → str | None
-    write_knowledge_pack(client_id, slug, ...) → Path
+    scrape_text(url)                            → ScrapeResult | raises ScraperBlockedError
+    list_knowledge_packs(client_id=None)        → list[Path]
+    load_knowledge_pack(client_id, slug)        → str | None
+    write_knowledge_pack(client_id, slug, ...)  → Path
     gather_build_material(client_id, slug, ...) → BuildMaterial
 """
 
@@ -51,7 +52,7 @@ from typing import Optional
 
 PACKAGE_ROOT = Path(__file__).parent.parent
 KNOWLEDGE_DIR = PACKAGE_ROOT / "knowledge"
-KNOWLEDGE_DIR.mkdir(exist_ok=True)
+# Note: KNOWLEDGE_DIR is created lazily in write_knowledge_pack(), not at import time.
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -203,14 +204,17 @@ def _truncate(text: str) -> str:
 def _looks_blocked(text: str, status_code: int = 200) -> bool:
     """
     Heuristic to detect bot-blocker challenge pages.
-    Short content + block signals = blocked.
+
+    Checks signals FIRST, then length. A Cloudflare challenge page can
+    easily exceed MIN_USEFUL_CHARS — length alone is not a reliable signal.
     """
     if status_code in (403, 429, 503):
         return True
-    if len(text) >= MIN_USEFUL_CHARS:
-        return False   # long enough to be real content
+    # Signal check must come before length check: challenge pages can be verbose
     lower = text.lower()
-    return any(signal in lower for signal in BOT_BLOCK_SIGNALS)
+    if any(signal in lower for signal in BOT_BLOCK_SIGNALS):
+        return True
+    return len(text) < MIN_USEFUL_CHARS
 
 
 # ── Pass 1: requests + Chrome headers ─────────────────────────────────────────
@@ -359,8 +363,20 @@ def scrape_text(url: str) -> ScrapeResult:
 
 # ── Public: knowledge pack file I/O ──────────────────────────────────────────
 
+def _sanitize_id(value: str) -> str:
+    """Sanitize a client_id or product_slug for safe use as a filename component."""
+    return re.sub(r"[^a-zA-Z0-9_-]", "_", value)
+
+
 def _pack_path(client_id: str, product_slug: str) -> Path:
-    return KNOWLEDGE_DIR / f"{client_id}_{product_slug}_knowledge.md"
+    safe_client = _sanitize_id(client_id)
+    safe_slug = _sanitize_id(product_slug)
+    if safe_client != client_id or safe_slug != product_slug:
+        print(
+            f"[knowledge_builder] Sanitized path inputs: "
+            f"{client_id!r}→{safe_client!r}, {product_slug!r}→{safe_slug!r}"
+        )
+    return KNOWLEDGE_DIR / f"{safe_client}_{safe_slug}_knowledge.md"
 
 
 def load_knowledge_pack(client_id: str, product_slug: str) -> Optional[str]:
@@ -375,6 +391,28 @@ def load_knowledge_pack(client_id: str, product_slug: str) -> Optional[str]:
     if path.exists():
         return path.read_text(encoding="utf-8")
     return None
+
+
+def list_knowledge_packs(client_id: Optional[str] = None) -> list[Path]:
+    """
+    List all knowledge packs in KNOWLEDGE_DIR.
+
+    Optionally filter by client_id prefix — e.g. client_id="helio" matches
+    all files named helio_*_knowledge.md.
+
+    Returns a sorted list of Path objects. Agents should call this to check
+    what packs exist before deciding to scrape or ask the user for content.
+
+    Args:
+        client_id: Optional client ID prefix to filter by.
+
+    Returns:
+        Sorted list of Path objects for matching knowledge packs.
+    """
+    if not KNOWLEDGE_DIR.exists():
+        return []
+    pattern = f"{_sanitize_id(client_id)}_*_knowledge.md" if client_id else "*_knowledge.md"
+    return sorted(p for p in KNOWLEDGE_DIR.glob(pattern) if p.name != ".gitkeep")
 
 
 def write_knowledge_pack(
@@ -408,6 +446,9 @@ def write_knowledge_pack(
     """
     path = _pack_path(client_id, product_slug)
 
+    # Lazy directory creation — no side effects at import time
+    KNOWLEDGE_DIR.mkdir(parents=True, exist_ok=True)
+
     if path.exists() and not overwrite:
         raise KnowledgePackExistsError(
             f"Knowledge pack already exists at {path}. "
@@ -415,10 +456,18 @@ def write_knowledge_pack(
             "first to review the existing content."
         )
 
+    if not content.strip():
+        raise ValueError(
+            "content is empty — knowledge pack not written. "
+            "The agent must synthesize raw material into content before calling write_knowledge_pack()."
+        )
+
     sources_str = ", ".join(sources_used) if sources_used else "unknown"
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     metadata_header = (
         f"<!-- "
+        f"client: {client_id} | "
+        f"product: {product_slug} | "
         f"sources: {sources_str} | "
         f"author: {author} | "
         f"built: {timestamp}"
@@ -505,9 +554,13 @@ def gather_build_material(
 
     if url:
         if user_provided_text:
-            # User already pasted content — skip scraping, use what we have.
+            # User-provided text takes precedence over URL scraping.
             # This may happen when the agent pre-emptively asks for text
             # because it knows the site is likely blocked.
+            print(
+                f"[knowledge_builder] URL {url!r} provided but skipped — "
+                "user_provided_text takes precedence."
+            )
             sources_used.append("user_provided")
         else:
             # Attempt two-pass scrape. ScraperBlockedError propagates to caller.
