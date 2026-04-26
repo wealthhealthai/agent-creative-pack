@@ -1,5 +1,5 @@
 """
-Creative Capability Pack — Phase 1 (Static Ads)
+Creative Capability Pack — Phase 1 (Static Ads) + Phase 2 (Knowledge Builder)
 Reusable Python module for AI-powered ad creative generation.
 """
 import json
@@ -13,6 +13,16 @@ from .expander import expand_brief
 from .generator import generate_image, build_image_prompt
 from .compositor import composite_ad
 from .exporter import export_to_platforms, calculate_cost
+from .knowledge_builder import (
+    scrape_text,
+    load_knowledge_pack,
+    write_knowledge_pack,
+    gather_build_material,
+    ScraperBlockedError,
+    KnowledgePackExistsError,
+    BuildMaterial,
+    ScrapeResult,
+)
 
 
 def get_brand_kit(client_id: str) -> BrandKit:

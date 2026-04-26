@@ -13,15 +13,37 @@ Before calling any `generate_*` function, you must complete a knowledge build fo
 
 ---
 
-## Step 0 — Pull Shared Context First
+## Step 0 — Check What You Already Know First
 
-Before asking the user anything, check what you already know:
+**Do not ask the user for information you already have. Do not scrape a URL before checking internal knowledge.**
 
-- Query other agents on the gateway (Archon, Helena, or any agent that works with this client)
-- Read any existing workspace files about the product, company, or audience
-- Check if a knowledge file already exists at `brand_kits/<client_id>_knowledge.md`
+Before touching any external source, exhaust internal knowledge in this order:
 
-If another agent already knows the product deeply, don't duplicate the conversation. Pull their context and only ask about gaps. The user should never have to repeat themselves to multiple WealthHealth AI agents.
+### 0a — Search Your Own Memory
+- Search `MEMORY.md` and all `memory/*.md` files for anything about this client or product
+- Scan workspace reference files — enterprise agents may be preloaded with product briefs, brand guides, or compliance documents at deploy time
+- Check if a knowledge pack already exists: call `load_knowledge_pack(client_id, product_slug)` from `knowledge_builder.py`
+  - If it exists and is complete → use it, skip Steps 0b and 0c entirely
+  - If it exists but is outdated or thin → note the gaps, proceed to 0b/0c for those gaps only
+
+### 0b — Query Other Agents (if on a shared gateway)
+- Query Archon, Helena, or any other agent that works with this client
+- Do not duplicate conversations the user has already had with other agents
+- Pass whatever you find into `gather_build_material(prior_context=...)` as agent memory
+
+### 0c — Scrape the URL (if needed)
+- Only reach for `scrape_text(url)` after 0a and 0b are exhausted or insufficient
+- Pass all internal context collected above into `gather_build_material(prior_context=...)` first
+- If `ScraperBlockedError` is raised: stop, tell the user clearly, ask them to paste or upload product content. Never hallucinate.
+
+### Rule: Internal knowledge takes precedence
+If your memory and the scraped content conflict, trust your memory. You were explicitly loaded with accurate information. Scraped marketing copy may be aspirational, outdated, or imprecise — your preloaded context was provided by someone who knows the product.
+
+### Always confirm sources to the operator
+After building or updating a knowledge pack, report:
+> "Saved knowledge pack for [Product]. Sources used: [agent memory / scrape:requests / scrape:playwright / user-provided]"
+
+The operator should always know what went into the knowledge pack.
 
 ---
 
